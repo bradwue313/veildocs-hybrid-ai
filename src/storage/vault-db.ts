@@ -37,6 +37,8 @@ export interface FirebaseWebConfig {
   readonly messagingSenderId?: string;
   readonly appId: string;
   readonly cloudModel: string;
+  readonly appCheckSiteKey?: string;
+  readonly appCheckDebugToken?: string;
 }
 
 const TELEMETRY_KEY = "veildocs:telemetry:v1";
@@ -87,6 +89,8 @@ export function loadFirebaseConfig(): FirebaseWebConfig | null {
       messagingSenderId: import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || undefined,
       appId: envAppId,
       cloudModel: import.meta.env?.VITE_FIREBASE_CLOUD_MODEL?.trim() || "gemini-3.5-flash-lite",
+      appCheckSiteKey: import.meta.env?.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() || undefined,
+      appCheckDebugToken: import.meta.env?.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN?.trim() || undefined,
     };
   }
 
@@ -104,6 +108,8 @@ export function loadFirebaseConfig(): FirebaseWebConfig | null {
     messagingSenderId: saved.messagingSenderId,
     appId: saved.appId,
     cloudModel: saved.cloudModel || "gemini-3.5-flash-lite",
+    appCheckSiteKey: saved.appCheckSiteKey,
+    appCheckDebugToken: saved.appCheckDebugToken,
   };
 }
 

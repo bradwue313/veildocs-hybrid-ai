@@ -170,6 +170,8 @@ const cfgProjectId = el<HTMLInputElement>("cfg-project-id");
 const cfgAppId = el<HTMLInputElement>("cfg-app-id");
 const cfgAuthDomain = el<HTMLInputElement>("cfg-auth-domain");
 const cfgCloudModel = el<HTMLInputElement>("cfg-cloud-model");
+const cfgAppCheckSiteKey = el<HTMLInputElement>("cfg-app-check-site-key");
+const cfgAppCheckDebugToken = el<HTMLInputElement>("cfg-app-check-debug-token");
 const cfgValidationError = el<HTMLParagraphElement>("cfg-validation-error");
 const clearFirebaseConfigBtn = el<HTMLButtonElement>("clear-firebase-config-btn");
 
@@ -837,6 +839,8 @@ function openConfigDialog(trigger: HTMLElement): void {
   cfgAppId.value = firebaseConfig?.appId ?? "";
   cfgAuthDomain.value = firebaseConfig?.authDomain ?? "";
   cfgCloudModel.value = firebaseConfig?.cloudModel ?? "gemini-3.5-flash-lite";
+  cfgAppCheckSiteKey.value = firebaseConfig?.appCheckSiteKey ?? "";
+  cfgAppCheckDebugToken.value = firebaseConfig?.appCheckDebugToken ?? "";
   applyThemePreference(themePreference, false);
 
   if (typeof configDialog.showModal === "function") {
@@ -1100,6 +1104,8 @@ firebaseConfigForm.addEventListener("submit", (event) => {
   const appId = cfgAppId.value.trim();
   const authDomain = cfgAuthDomain.value.trim();
   const cloudModel = cfgCloudModel.value.trim() || "gemini-3.5-flash-lite";
+  const appCheckSiteKey = cfgAppCheckSiteKey.value.trim() || undefined;
+  const appCheckDebugToken = cfgAppCheckDebugToken.value.trim() || undefined;
 
   if (!apiKey && !projectId && !appId) {
     saveFirebaseConfig(null);
@@ -1121,6 +1127,8 @@ firebaseConfigForm.addEventListener("submit", (event) => {
     appId,
     authDomain: authDomain || `${projectId}.firebaseapp.com`,
     cloudModel,
+    appCheckSiteKey,
+    appCheckDebugToken,
   };
   saveFirebaseConfig(nextConfig);
   firebaseConfig = nextConfig;

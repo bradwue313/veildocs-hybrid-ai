@@ -187,6 +187,40 @@ describe("HybridInferenceEngine", () => {
     expect(output.telemetry.bytesSentToCloud).toBe(0);
   });
 
+  it("initializes Firebase App Check (ReCaptchaV3Provider) when site key is configured", async () => {
+    const initializeAppCheck = vi.fn(() => ({}) as never);
+    const engine = new HybridInferenceEngine({
+      initializeApp: vi.fn(() => ({ name: "veildocs-hybrid" }) as never),
+      getApps: vi.fn(() => []),
+      deleteApp: vi.fn(),
+      initializeAppCheck,
+      getAI: vi.fn(() => ({}) as never),
+      getGenerativeModel: vi.fn(() => ({
+        generateContent: async () => ({
+          response: {
+            text: () => "Verified with App Check.",
+            inferenceSource: InferenceSource.IN_CLOUD,
+          },
+        }),
+      })) as never,
+      createBackend: vi.fn(() => ({}) as never),
+      isOnline: () => true,
+      now: () => 50,
+    });
+
+    const redaction = redactDocument("Email alice@example.org about App Check.");
+    const output = await engine.runCloudDeepAnalysis({
+      docTitle: "App Check Audit",
+      redaction,
+      taskPrompt: "Check compliance.",
+      config: { ...TEST_CONFIG, appCheckSiteKey: "6Lc-test-site-key" },
+      simulatedOffline: false,
+    });
+
+    expect(initializeAppCheck).toHaveBeenCalledTimes(1);
+    expect(output.status).toBe("completed");
+  });
+
   it("safely parses valid PERSON/ORG entities from on-device JSON response", () => {
     const parsed = extractJsonEntityArray(
       'Here you go: [{"text":"Dr. Wiremu Patel","category":"PERSON"},{"text":"Aotearoa Health Ltd","category":"ORG"},{"text":"x","category":"PERSON"}]'

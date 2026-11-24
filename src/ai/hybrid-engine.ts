@@ -1,4 +1,5 @@
 import { deleteApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import {
   getAI,
   getGenerativeModel,
@@ -37,6 +38,7 @@ export interface HybridRuntimeDeps {
   readonly initializeApp: typeof initializeApp;
   readonly getApps: typeof getApps;
   readonly deleteApp: typeof deleteApp;
+  readonly initializeAppCheck: typeof initializeAppCheck;
   readonly getAI: typeof getAI;
   readonly getGenerativeModel: typeof getGenerativeModel;
   readonly createBackend: () => GoogleAIBackend;
@@ -48,6 +50,7 @@ const DEFAULT_DEPS: HybridRuntimeDeps = {
   initializeApp,
   getApps,
   deleteApp,
+  initializeAppCheck,
   getAI,
   getGenerativeModel,
   createBackend: () => new GoogleAIBackend(),
@@ -228,7 +231,13 @@ export class HybridInferenceEngine {
   }
 
   private async ensureApp(config: FirebaseWebConfig): Promise<FirebaseApp> {
-    const signature = `${config.apiKey}|${config.projectId}|${config.appId}`;
+    const signature = [
+      config.apiKey,
+      config.projectId,
+      config.appId,
+      config.appCheckSiteKey ?? "",
+      config.appCheckDebugToken ?? "",
+    ].join("|");
     if (this.cachedApp && this.cachedSignature === signature) {
       return this.cachedApp;
     }
@@ -236,6 +245,12 @@ export class HybridInferenceEngine {
     const existing = this.deps.getApps().find((app) => app.name === APP_NAME);
     if (existing) {
       await this.deps.deleteApp(existing);
+    }
+
+    if (config.appCheckDebugToken?.trim()) {
+      const token = config.appCheckDebugToken.trim();
+      (globalThis as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+        token.toLowerCase() === "true" ? true : token;
     }
 
     const app = this.deps.initializeApp(
@@ -249,6 +264,13 @@ export class HybridInferenceEngine {
       },
       APP_NAME
     );
+
+    if (config.appCheckSiteKey?.trim()) {
+      this.deps.initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(config.appCheckSiteKey.trim()),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
 
     this.cachedApp = app;
     this.cachedSignature = signature;

@@ -1,6 +1,6 @@
 # VeilDocs — Local Privacy Vault & Hybrid AI Workspace
 
-**Privacy-first local + cloud hybrid AI workspace built for Google [`#BuildHybridAI`](https://buildhybridai2026.devpost.com/) (2026).**
+**Privacy-first local + cloud hybrid AI workspace built for Google [`#BuildHybridAI`](https://firebasehybridaihackathon.devpost.com/) (2026).**
 
 VeilDocs lets clinicians, security engineers, legal teams, and contractors analyze sensitive PDF and text documents with cloud-scale Gemini models **without leaking raw PII, tax IDs, payment cards, or API credentials across the network**.
 
@@ -50,9 +50,9 @@ npm install
 
 ### 2. Configure Firebase AI Logic (optional for Demo Preview, required for live AI)
 1. Create or open a project in the [Firebase Console](https://console.firebase.google.com/).
-2. Enable **Firebase AI Logic** (Gemini Developer API backend) and register a **Web App** (`</>`).
+2. Enable **Firebase AI Logic** (Gemini Developer API backend), **Firebase App Check** (reCAPTCHA v3 site key or debug token), and register a **Web App** (`</>`).
 3. Either:
-   - Copy `.env.example` to `.env.local` and fill in `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_FIREBASE_CLOUD_MODEL` (default `gemini-3.5-flash-lite`), **OR**
+   - Copy `.env.example` to `.env.local` and fill in `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_CLOUD_MODEL` (default `gemini-3.5-flash-lite`), and optional `VITE_FIREBASE_APP_CHECK_SITE_KEY` / `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN`, **OR**
    - Launch the app and enter credentials in **Workspace Settings** (stored locally in your browser's `localStorage`).
 
 > **Note on Chrome On-Device Gemini Nano:** On desktop Chrome supporting Web Built-in AI (`chrome://flags/#prompt-api-for-gemini-nano` and `chrome://flags/#optimization-guide-on-device-model`), click **Warm up Nano** after any user interaction so `GenerativeModel.initializeDeviceModel()` prepares the local model. If unavailable, VeilDocs demonstrates `PREFER_ON_DEVICE` fallback cleanly while still keeping raw PII masked.
