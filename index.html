@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var savedScheme = localStorage.getItem("color-scheme");
+        if (savedScheme === "light" || savedScheme === "dark") {
+          document.querySelector('meta[name="color-scheme"]').content = savedScheme;
+        }
+      } catch (err) {}
+    </script>
+    <title>VeilDocs — Local Privacy Vault &amp; Hybrid AI Workspace</title>
+    <meta
+      name="description"
+      content="Zero-leak client-side PII redaction + Firebase AI Logic hybrid workspace (Chrome Gemini Nano &amp; Sanitized Gemini Cloud)."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to workspace</a>
+
+    <div id="live-polite" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+    <div id="live-assertive" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
+
+    <div class="app-shell">
+      <!-- Left App Sidebar -->
+      <aside id="app-sidebar" class="sidebar" aria-label="Workspace sidebar">
+        <div class="sidebar-brand">
+          <span class="brand-emblem" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.5 4.5 5.8v5.5c0 5.1 3.2 9.4 7.5 10.7 4.3-1.3 7.5-5.6 7.5-10.7V5.8L12 2.5Z" />
+              <rect x="9.25" y="11" width="5.5" height="4.5" rx="1" />
+              <path d="M10.5 11V9.3a1.5 1.5 0 0 1 3 0V11" />
+            </svg>
+          </span>
+          <div class="brand-copy">
+            <span class="brand-name">VeilDocs</span>
+            <span class="brand-sub">Privacy AI Vault</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Primary workspace views">
+          <p class="nav-section-label">Workspace</p>
+          <ul class="nav-list">
+            <li>
+              <button type="button" id="nav-studio-btn" class="nav-item nav-item--active" aria-current="page">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="2" />
+                  <path d="M12 4v16" />
+                </svg>
+                <span>Document Studio</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" id="nav-audit-btn" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 18h16M7 14v-3M12 14V7M17 14v-5" />
+                </svg>
+                <span>Wire &amp; Audit Log</span>
+                <span id="nav-audit-count" class="nav-count">0</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" id="nav-queue-btn" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>Offline Queue</span>
+                <span id="queue-count" class="nav-count">0</span>
+              </button>
+            </li>
+          </ul>
+
+          <p class="nav-section-label">Vault Documents</p>
+          <div id="scenario-list" class="doc-list" role="group" aria-label="Sample documents"></div>
+
+          <div class="upload-wrap">
+            <label class="upload-drop-btn" for="file-upload-input">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+                <path d="M4 16.5v1.8A2.2 2.2 0 0 0 6.2 20.5h11.6a2.2 2.2 0 0 0 2.2-2.2v-1.8" />
+              </svg>
+              <span>Import PDF / Text</span>
+            </label>
+            <input
+              id="file-upload-input"
+              class="visually-hidden"
+              type="file"
+              accept=".pdf,.txt,.md,.csv,.log,.json,application/pdf,text/plain,text/markdown,text/csv"
+            />
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="theme-switch-group" role="group" aria-label="Quick color theme">
+            <button type="button" id="quick-theme-light" class="theme-chip" aria-pressed="false">Light</button>
+            <button type="button" id="quick-theme-dark" class="theme-chip" aria-pressed="false">Dark</button>
+            <button type="button" id="quick-theme-system" class="theme-chip theme-chip--active" aria-pressed="true">Auto</button>
+          </div>
+
+          <button type="button" id="firebase-status-btn" class="connection-card connection-card--demo">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="firebase-status-text" class="connection-label">Demo Mode &middot; Connect Firebase</span>
+          </button>
+
+          <button type="button" id="open-config-btn" class="btn btn--secondary btn--full btn--icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+            <span>Workspace Settings</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Application Column -->
+      <div class="app-main">
+        <header class="app-header">
+          <div class="header-doc-meta">
+            <h1 id="main-content" tabindex="-1">Clinical Intake</h1>
+            <div class="header-badges">
+              <span id="active-domain-tag" class="meta-tag">Healthcare</span>
+              <span id="zero-leak-badge" class="badge badge--safe">0 PII Leaks Verified</span>
+              <span id="active-file-pill" class="meta-tag meta-tag--file" hidden></span>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <dl class="mini-telemetry" aria-label="Live hybrid run summary">
+              <div class="mini-metric">
+                <dt>Local</dt>
+                <dd id="kpi-local-count">0</dd>
+              </div>
+              <div class="mini-metric">
+                <dt>Cloud</dt>
+                <dd id="kpi-cloud-count">0</dd>
+              </div>
+              <div class="mini-metric">
+                <dt>Shielded</dt>
+                <dd id="kpi-shielded-count">0</dd>
+              </div>
+              <div class="mini-metric">
+                <dt>Spend</dt>
+                <dd id="kpi-cost-usd">$0.0000</dd>
+              </div>
+            </dl>
+
+            <span id="connectivity-pill" class="status-pill status-pill--ok">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="connectivity-text">Online</span>
+            </span>
+
+            <label class="switch-control" for="simulate-offline-toggle">
+              <input id="simulate-offline-toggle" type="checkbox" class="switch-input" />
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-label">Offline sim</span>
+            </label>
+          </div>
+        </header>
+
+        <!-- Compact Pipeline Bar -->
+        <div class="pipeline-strip" aria-label="Privacy pipeline progress">
+          <ol class="pipeline-steps">
+            <li id="step-shield" class="pipeline-step pipeline-step--done">
+              <span class="step-index">1</span>
+              <span class="step-title">Shield in browser</span>
+              <span id="step-shield-detail" class="step-detail">0 PII leaks</span>
+            </li>
+            <li id="step-route" class="pipeline-step">
+              <span class="step-index">2</span>
+              <span class="step-title">Hybrid AI route</span>
+              <span id="step-route-detail" class="step-detail">Ready</span>
+            </li>
+            <li id="step-restore" class="pipeline-step">
+              <span class="step-index">3</span>
+              <span class="step-title">Local restore</span>
+              <span id="step-restore-detail" class="step-detail">Vault keys held locally</span>
+            </li>
+          </ol>
+        </div>
+
+        <main class="main-canvas">
+          <!-- View 1: Document Studio -->
+          <section id="view-studio" class="studio-split" aria-label="Document privacy studio and AI copilot">
+            <!-- Left Surface: Unified Document Sheet -->
+            <section class="sheet-pane" aria-labelledby="doc-stage-heading">
+              <div class="pane-toolbar">
+                <div class="pane-title-group">
+                  <h2 id="doc-stage-heading">Privacy Boundary</h2>
+                  <span id="doc-metrics" class="doc-metrics">0 chars</span>
+                </div>
+
+                <div class="pane-toolbar-actions">
+                  <div class="segmented-control" role="group" aria-label="Inspector mode">
+                    <button type="button" id="view-redacted-btn" class="seg-btn seg-btn--active" aria-pressed="true">
+                      Masked Tokens
+                    </button>
+                    <button type="button" id="view-original-btn" class="seg-btn" aria-pressed="false">
+                      Source Highlights
+                    </button>
+                  </div>
+
+                  <button type="button" id="copy-redacted-btn" class="btn btn--small btn--ghost btn--icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="9" y="9" width="11" height="11" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span id="copy-redacted-label">Copy masked</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="redaction-stats" class="stats-strip" aria-label="Shielded sensitive item breakdown"></div>
+
+              <div
+                id="redacted-preview-box"
+                class="document-inspector"
+                role="region"
+                aria-label="Live outbound masked payload"
+                tabindex="0"
+              ></div>
+
+              <div id="source-dropzone" class="source-editor-section">
+                <div class="editor-subheader">
+                  <label for="raw-document-input">Source editor (drag &amp; drop PDF or text anytime)</label>
+                  <div class="editor-inline-tools">
+                    <button type="button" id="ai-entity-scan-btn" class="btn btn--small btn--secondary btn--icon">
+                      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="10" r="2.5" />
+                        <path d="M7.5 18a4.5 4.5 0 0 1 9 0" />
+                      </svg>
+                      <span>Scan names locally</span>
+                    </button>
+                    <button type="button" id="warmup-local-btn" class="btn btn--small btn--ghost">
+                      Warm up Nano
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  id="raw-document-input"
+                  rows="5"
+                  spellcheck="false"
+                  aria-describedby="privacy-guarantee-note"
+                  placeholder="Paste confidential text or drop a .pdf, .txt, .md, or .csv file..."
+                ></textarea>
+
+                <div class="custom-terms-row">
+                  <label for="custom-terms-input">Custom terms</label>
+                  <input
+                    id="custom-terms-input"
+                    type="text"
+                    placeholder="Comma-separated names, codenames, or vendors..."
+                  />
+                </div>
+
+                <p id="privacy-guarantee-note" class="field-hint">
+                  Automatically redacts secrets, Luhn cards, SSN/NHI/IRD IDs, emails, phones, IPv4 addresses, and custom rules strictly client-side.
+                </p>
+
+                <div id="nano-warmup-wrap" class="warmup-wrap" hidden>
+                  <div class="warmup-meta">
+                    <label for="nano-warmup-progress">Downloading Chrome Gemini Nano</label>
+                    <span id="nano-warmup-pct">0%</span>
+                  </div>
+                  <progress id="nano-warmup-progress" class="warmup-progress" max="100"></progress>
+                </div>
+              </div>
+            </section>
+
+            <!-- Right Surface: Hybrid AI Copilot -->
+            <section class="copilot-pane" aria-labelledby="copilot-heading">
+              <div class="pane-toolbar">
+                <div class="pane-title-group">
+                  <h2 id="copilot-heading">VeilDocs AI</h2>
+                  <span id="active-route-badge" class="badge badge--neutral">Ready</span>
+                </div>
+
+                <div class="pane-toolbar-actions">
+                  <label class="checkbox-inline checkbox-inline--compact" for="show-sanitized-output-toggle">
+                    <input id="show-sanitized-output-toggle" type="checkbox" />
+                    <span>Show tokenized wire view</span>
+                  </label>
+                  <button type="button" id="copy-report-btn" class="btn btn--small btn--ghost btn--icon" disabled>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="9" y="9" width="11" height="11" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span id="copy-report-label">Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="demo-guidance-banner" class="demo-callout">
+                <div class="demo-callout-copy">
+                  <strong>Preview mode active</strong> — runs safely offline at $0. Add Firebase credentials anytime for live Gemini Nano + Cloud streaming.
+                </div>
+                <button type="button" id="banner-connect-btn" class="btn btn--small btn--secondary">
+                  Connect
+                </button>
+              </div>
+
+              <div class="copilot-actions">
+                <button type="button" id="run-triage-btn" class="action-tile action-tile--local">
+                  <span class="action-tile-title">Fast Local Triage</span>
+                  <span class="action-tile-meta">Gemini Nano first &middot; $0 cloud</span>
+                </button>
+
+                <button type="button" id="run-cloud-audit-btn" class="action-tile action-tile--cloud">
+                  <span class="action-tile-title">Sanitized Deep Audit</span>
+                  <span class="action-tile-meta">Masked tokens only &middot; local restore</span>
+                </button>
+              </div>
+
+              <details class="directive-disclosure">
+                <summary>Customize cloud audit directive</summary>
+                <div class="directive-body">
+                  <label for="cloud-directive-input" class="visually-hidden">Cloud audit directive</label>
+                  <input
+                    id="cloud-directive-input"
+                    type="text"
+                    value="Identify critical legal, security, or clinical risks and list actionable owners & SLAs."
+                  />
+                </div>
+              </details>
+
+              <article
+                id="analysis-output-box"
+                class="copilot-stream"
+                aria-live="polite"
+                aria-label="AI response and restored report"
+              >
+                <div class="empty-state-block">
+                  <p class="empty-title">Ask or analyze with zero exposure</p>
+                  <p class="empty-copy">
+                    Every sensitive token shown on the left is withheld from the cloud and restored inside your browser after Gemini responds.
+                  </p>
+                  <div class="prompt-suggestions" role="group" aria-label="Suggested private questions">
+                    <button type="button" class="prompt-chip" data-prompt="Who owns the highest priority remediation or follow-up action?">
+                      Who owns the urgent action?
+                    </button>
+                    <button type="button" class="prompt-chip" data-prompt="List every risk and SLA timeline referenced in this document.">
+                      List risks &amp; SLAs
+                    </button>
+                    <button type="button" class="prompt-chip" data-prompt="Summarize what stayed protected vs what external context is safe to share.">
+                      Privacy summary
+                    </button>
+                  </div>
+                </div>
+              </article>
+
+              <form id="local-qa-form" class="composer">
+                <label for="qa-question-input" class="visually-hidden">Ask a private question about this document</label>
+                <input
+                  id="qa-question-input"
+                  type="text"
+                  placeholder="Ask anything about this document..."
+                />
+                <div class="composer-footer">
+                  <label class="checkbox-inline" for="strict-local-checkbox">
+                    <input id="strict-local-checkbox" type="checkbox" checked />
+                    <span>Strict on-device only (<code>ONLY_ON_DEVICE</code>)</span>
+                  </label>
+                  <button type="submit" id="run-qa-btn" class="btn btn--primary btn--small">Ask AI</button>
+                </div>
+              </form>
+            </section>
+          </section>
+
+          <!-- View 2: Wire & Audit Log -->
+          <section id="view-audit" class="subpage" aria-labelledby="wire-log-heading" hidden>
+            <div class="subpage-header">
+              <div>
+                <h2 id="wire-log-heading">Outbound Wire &amp; Routing Audit</h2>
+                <p class="subpage-desc">Verifiable proof of every on-device run and sanitized cloud payload byte count.</p>
+              </div>
+              <button type="button" id="clear-telemetry-btn" class="btn btn--small btn--secondary">Clear Audit Log</button>
+            </div>
+
+            <div class="audit-table-wrap">
+              <table class="audit-table">
+                <caption>Chronological hybrid routing &amp; outbound byte log</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Route</th>
+                    <th scope="col">Latency</th>
+                    <th scope="col">Cloud Bytes</th>
+                    <th scope="col">Summary &amp; Wire Preview</th>
+                  </tr>
+                </thead>
+                <tbody id="telemetry-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- View 3: Offline Queue -->
+          <section id="view-queue" class="subpage" aria-labelledby="queue-heading" hidden>
+            <div class="subpage-header">
+              <div>
+                <h2 id="queue-heading">Offline Cloud Queue</h2>
+                <p class="subpage-desc">Sanitized payloads queued offline with zero unmasked data waiting for connectivity.</p>
+              </div>
+              <button type="button" id="flush-queue-btn" class="btn btn--small btn--primary">
+                Flush Pending Jobs
+              </button>
+            </div>
+
+            <ul id="cloud-queue-list" class="queue-list"></ul>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <dialog
+      id="firebase-config-dialog"
+      class="config-dialog"
+      closedby="any"
+      aria-labelledby="config-dialog-title"
+    >
+      <div class="dialog-header">
+        <div>
+          <h2 id="config-dialog-title">Workspace Settings &amp; Firebase AI Logic</h2>
+          <p class="dialog-subtitle">Theme appearance and browser-stored Firebase credentials</p>
+        </div>
+        <button
+          type="button"
+          id="close-config-dialog-btn"
+          class="btn btn--small btn--secondary"
+          aria-label="Close settings dialog"
+        >
+          Close
+        </button>
+      </div>
+
+      <form id="firebase-config-form" method="dialog" class="dialog-body">
+        <fieldset class="theme-fieldset">
+          <legend>Color theme</legend>
+          <div class="radio-row">
+            <label class="radio-option" for="theme-system">
+              <input id="theme-system" type="radio" name="theme" value="system" checked />
+              <span id="theme-system-label">Auto (System)</span>
+            </label>
+            <label class="radio-option" for="theme-light">
+              <input id="theme-light" type="radio" name="theme" value="light" />
+              <span>Mineral Light</span>
+            </label>
+            <label class="radio-option" for="theme-dark">
+              <input id="theme-dark" type="radio" name="theme" value="dark" />
+              <span>Obsidian Dark</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <p class="dialog-note">
+          Credentials stay strictly in browser <code>localStorage</code> or <code>.env</code> (<code>VITE_FIREBASE_*</code>).
+          Leave blank to keep using zero-network Preview Mode.
+        </p>
+
+        <div class="dialog-grid">
+          <div class="field">
+            <label for="cfg-api-key">Firebase API Key</label>
+            <input id="cfg-api-key" type="password" autocomplete="off" placeholder="AIzaSy..." />
+          </div>
+          <div class="field">
+            <label for="cfg-project-id">Project ID</label>
+            <input id="cfg-project-id" type="text" placeholder="my-hybrid-ai-app" />
+          </div>
+          <div class="field">
+            <label for="cfg-app-id">App ID</label>
+            <input id="cfg-app-id" type="text" placeholder="1:123456:web:abcdef" />
+          </div>
+          <div class="field">
+            <label for="cfg-auth-domain">Auth Domain (optional)</label>
+            <input id="cfg-auth-domain" type="text" placeholder="my-hybrid-ai-app.firebaseapp.com" />
+          </div>
+          <div class="field dialog-span-2">
+            <label for="cfg-cloud-model">Cloud Gemini Model</label>
+            <input id="cfg-cloud-model" type="text" value="gemini-3.5-flash-lite" />
+          </div>
+        </div>
+
+        <p id="cfg-validation-error" class="field-error" role="alert" hidden></p>
+
+        <div class="dialog-footer">
+          <button type="button" id="clear-firebase-config-btn" class="btn btn--ghost">
+            Clear Saved Credentials
+          </button>
+          <div class="dialog-footer-right">
+            <button type="submit" value="cancel" class="btn btn--secondary" formnovalidate>
+              Cancel
+            </button>
+            <button type="submit" id="save-firebase-config-btn" value="save" class="btn btn--primary">
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
